@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TelaShare – Compartilhamento de tela</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans">
+
+  <!-- TELA DE ENTRADA -->
+  <div id="entrada" class="min-h-full flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+      <h1 class="text-2xl font-bold mb-1">📺 TelaShare</h1>
+      <p class="text-slate-400 mb-6 text-sm">Compartilhe sua tela e converse com todos em tempo real.</p>
+      <label class="block text-sm mb-1" for="nome">Seu nome de usuário</label>
+      <input id="nome" maxlength="24" placeholder="Ex.: Maria" class="w-full mb-4 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <label class="block text-sm mb-1" for="sala">Código da sala</label>
+      <input id="sala" maxlength="30" value="geral" placeholder="Ex.: reuniao-1" class="w-full mb-6 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <button id="btnEntrar" class="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-semibold">Entrar na sala</button>
+      <p class="text-xs text-slate-500 mt-4">Será solicitada permissão para usar o microfone (opcional).</p>
+    </div>
+  </div>
+
+  <!-- APLICATIVO -->
+  <div id="app" class="hidden h-full flex flex-col">
+    <header class="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900">
+      <div class="font-bold">📺 TelaShare <span class="text-slate-400 font-normal text-sm ml-2">Sala: <span id="salaAtual"></span></span></div>
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        <select id="tipoTela" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5" title="O que compartilhar">
+          <option value="monitor">Tela inteira</option>
+          <option value="window">Janela de um aplicativo</option>
+          <option value="browser">Aba do navegador</option>
+        </select>
+        <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkAudio" type="checkbox" checked class="accent-indigo-500" /> Incluir áudio do sistema</label>
+        <button id="btnMic" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700">🎤 Microfone ligado</button>
+        <button id="btnTransmitir" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-semibold">Iniciar transmissão</button>
+      </div>
+    </header>
+
+    <main class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_20rem]">
+      <!-- Área do vídeo -->
+      <section class="min-h-0 p-3 flex flex-col">
+        <div id="palco" class="relative flex-1 min-h-[240px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
+          <video id="video" autoplay playsinline class="max-w-full max-h-full w-full h-full object-contain"></video>
+          <div id="vazio" class="absolute text-slate-500 text-center px-4">Ninguém está transmitindo no momento.<br /><span class="text-sm">Clique em “Iniciar transmissão” para compartilhar sua tela.</span></div>
+          <div id="rotulo" class="hidden absolute top-3 left-3 bg-red-600/90 text-xs font-semibold px-2.5 py-1 rounded-full"></div>
+          <button id="btnTelaCheia" class="absolute bottom-3 right-3 px-3 py-1.5 text-sm rounded-lg bg-slate-900/80 hover:bg-slate-800">⛶ Tela cheia</button>
+
+          <!-- Barra flutuante (aparece ao mexer o mouse em tela cheia) -->
+          <div id="barraFlutuante" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 items-center gap-2 bg-slate-900/90 backdrop-blur px-4 py-2.5 rounded-full shadow-2xl transition-opacity duration-300 opacity-0">
+            <button id="fsMic" class="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600 text-sm">🎤 Microfone ligado</button>
+            <button id="fsTransmitir" class="px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold">Iniciar transmissão</button>
+            <button id="fsSair" class="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600 text-sm">Sair da tela cheia</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Barra lateral -->
+      <aside class="min-h-0 flex flex-col border-t lg:border-t-0 lg:border-l border-slate-800 bg-slate-900">
+        <div class="p-3 border-b border-slate-800">
+          <h2 class="font-semibold text-sm mb-2">👥 Participantes (<span id="contador">0</span>)</h2>
+          <ul id="listaParticipantes" class="space-y-1 max-h-48 overflow-y-auto text-sm"></ul>
+        </div>
+        <div class="flex-1 min-h-0 flex flex-col p-3">
+          <h2 class="font-semibold text-sm mb-2">💬 Chat</h2>
+          <div id="mensagens" class="flex-1 min-h-[120px] overflow-y-auto space-y-2 text-sm pr-1"></div>
+          <div class="flex gap-2 mt-2">
+            <input id="textoChat" maxlength="500" placeholder="Digite uma mensagem…" class="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button id="btnEnviar" class="px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm">Enviar</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Notificações -->
+  <div id="toasts" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
