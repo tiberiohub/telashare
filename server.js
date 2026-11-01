@@ -49,6 +49,14 @@ wss.on('connection', (ws) => {
       case 'chat': // mensagem de texto para todos
         broadcast(room, { type: 'chat', from: id, name: me.name, text: String(m.text).slice(0, 500), time: Date.now() });
         break;
+      case 'rename': { // troca de nome a qualquer momento; todos são avisados na hora
+        const novo = String(m.name || '').trim().slice(0, 24);
+        if (!novo || novo === me.name) break;
+        const antigo = me.name; me.name = novo;
+        broadcast(room, { type: 'renamed', id, oldName: antigo, name: novo }, id);
+        send(ws, { type: 'rename-ok', name: novo });
+        break;
+      }
       case 'sharing': { // início/fim de transmissão (apenas um transmissor por vez)
         const other = [...room].find(([pid, p]) => pid !== id && p.sharing);
         if (m.sharing && other) return send(ws, { type: 'share-denied', name: other[1].name });
